@@ -1,6 +1,5 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Text;
 
 namespace GPSaveConverter
@@ -10,17 +9,17 @@ namespace GPSaveConverter
     /// </summary>
     static class ScriptManager
     {
+        /// <summary>
+        /// Executes a PowerShell script and returns the result as a string.
+        /// </summary>
+        /// <param name="scriptText">The PowerShell script to be executed.</param>
+        /// <returns>A string representation of the script result.</returns>
         public static string RunScript(string scriptText)
         {
             // create Powershell runspace
-            Runspace runspace = RunspaceFactory.CreateRunspace();
-
-            // open it
-            runspace.Open();
-
-            // create a pipeline and feed it the script text
-            Pipeline pipeline = runspace.CreatePipeline();
-            pipeline.Commands.AddScript(scriptText);
+            using var powershell = PowerShell.Create();
+            // feed it the script text
+            powershell.AddScript(scriptText);
 
             // add an extra command to transform the script
             // output objects into nicely formatted strings
@@ -30,17 +29,14 @@ namespace GPSaveConverter
 
             // "Get-Process" returns a collection
             // of System.Diagnostics.Process instances.
-            pipeline.Commands.Add("Out-String");
+            // powershell.Commands.AddCommand("Out-String");
 
             // execute the script
-            Collection<PSObject> results = pipeline.Invoke();
-
-            // close the runspace
-            runspace.Close();
+            Collection<PSObject> results = powershell.Invoke();
 
             // convert the script result into a single string
-            StringBuilder stringBuilder = new StringBuilder();
-            foreach (PSObject obj in results)
+            var stringBuilder = new StringBuilder();
+            foreach (var obj in results)
             {
                 stringBuilder.AppendLine(obj.ToString());
             }
