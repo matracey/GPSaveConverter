@@ -43,17 +43,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Costura.Fody" Version="5.7.0">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="Fody" Version="6.8.0">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.PowerShell.5.1.ReferenceAssemblies" Version="1.0.0" />
+        <PackageReference Include="Microsoft.PowerShell.Native" Version="7.4.0" />
+        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.1" />
         <PackageReference Include="NLog" Version="5.2.8" />
         <PackageReference Include="NLog.Windows.Forms" Version="5.2.3" />
+        <PackageReference Include="System.Management.Automation" Version="7.4.1" />
     </ItemGroup>
 
 </Project>
