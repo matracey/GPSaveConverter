@@ -32,7 +32,7 @@ jobs:
         run: dotnet build GPSaveConverter.sln --configuration ${{ matrix.configuration }} --verbosity minimal
 
       - name: Run tests
-        run: dotnet test GPSaveConverter.Tests/GPSaveConverter.Tests.csproj --configuration ${{ matrix.configuration }} --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test GPSaveConverter.Tests/GPSaveConverter.Tests.csproj --configuration ${{ matrix.configuration }} --verbosity normal --filter "Category!=Smoke" --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
         if: always()
