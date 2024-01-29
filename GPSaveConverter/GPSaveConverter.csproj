@@ -20,18 +20,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Costura.Fody" Version="6.0.0">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="Fody" Version="6.9.2">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.PowerShell.5.1.ReferenceAssemblies" Version="1.0.0" />
+        <PackageReference Include="Microsoft.PowerShell.Native" Version="7.4.0" />
+        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.1" />
         <PackageReference Include="NLog" Version="5.5.0" />
         <PackageReference Include="NLog.Windows.Forms" Version="5.2.4" />
         <PackageReference Include="Ookii.Dialogs.WinForms" Version="4.0.0" />
+        <PackageReference Include="System.Management.Automation" Version="7.4.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -50,18 +44,14 @@
 
     <ItemGroup>
         <Content Include="Resources\Icon-16.png" />
-        <Content Include="Resources\Icon-256.png" />
+        <Content Include="Resources\Icon-256.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </Content>
         <Content Include="Resources\Icon-32.png" />
         <Content Include="Resources\Icon-48.png" />
         <Content Include="Resources\Icon.ico" />
         <Content Include="Resources\SteamAPIKey.txt" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="Resources\Icon-256.png">
-            <Pack>True</Pack>
-            <PackagePath>\</PackagePath>
-        </None>
     </ItemGroup>
 
 </Project>
