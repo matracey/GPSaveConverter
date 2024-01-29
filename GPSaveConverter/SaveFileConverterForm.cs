@@ -20,6 +20,7 @@ namespace GPSaveConverter
         internal static IFileSystem FileSystem { get; set; } = new DefaultFileSystem();
         private static NLog.Logger logger = LogHelper.getClassLogger();
         Xbox.XboxContainerIndex currentContainer;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal Library.GameInfo ActiveGame { get; set; }
         private PreferencesForm prefsForm;
         private CreditsForm creditsForm;

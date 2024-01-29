@@ -56,4 +56,4 @@ jobs:
         with:
           name: GPSaveConverter-Release
           overwrite: true
-          path: GPSaveConverter/bin/Release/net472/
+          path: GPSaveConverter/bin/Release/
