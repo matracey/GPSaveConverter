@@ -28,6 +28,7 @@
     <PackageReference Include="NLog" Version="5.5.0" />
     <PackageReference Include="NLog.Windows.Forms" Version="5.2.4" />
     <PackageReference Include="Ookii.Dialogs.WinForms" Version="4.0.0" />
+    <PackageReference Include="System.Management.Automation" Version="7.4.1" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="CueTextBox.cs">
@@ -44,16 +45,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\Icon-16.png" />
-    <Content Include="Resources\Icon-256.png" />
+    <Content Include="Resources\Icon-256.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </Content>
     <Content Include="Resources\Icon-32.png" />
     <Content Include="Resources\Icon-48.png" />
     <Content Include="Resources\Icon.ico" />
     <Content Include="Resources\SteamAPIKey.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="Resources\Icon-256.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
   </ItemGroup>
 </Project>
