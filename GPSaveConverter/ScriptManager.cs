@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Text;
 
 namespace GPSaveConverter
@@ -9,34 +10,43 @@ namespace GPSaveConverter
     /// </summary>
     static class ScriptManager
     {
-        /// <summary>
-        /// Executes a PowerShell script and returns the result as a string.
-        /// </summary>
-        /// <param name="scriptText">The PowerShell script to be executed.</param>
-        /// <returns>A string representation of the script result.</returns>
         public static string RunScript(string scriptText)
         {
-            // create Powershell runspace
-            using var powershell = PowerShell.Create();
-            // feed it the script text
-            powershell.AddScript(scriptText);
+            // Create a runspace and open it.
+            using Runspace runspace = RunspaceFactory.CreateRunspace();
+            runspace.Open();
 
-            // add an extra command to transform the script
-            // output objects into nicely formatted strings
+            // Use the PowerShell class to execute commands in the runspace.
+            using PowerShell ps = PowerShell.Create(runspace);
 
-            // remove this line to get the actual objects
-            // that the script returns. For example, the script
+            // Set the execution policy to bypass for the current process.
+            ps.AddScript("Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass");
 
-            // "Get-Process" returns a collection
-            // of System.Diagnostics.Process instances.
-            // powershell.Commands.AddCommand("Out-String");
+            // Add the script to the pipeline
+            ps.AddScript(scriptText);
 
-            // execute the script
-            Collection<PSObject> results = powershell.Invoke();
+            // Add an extra command to transform the script output objects into
+            // nicely formatted strings.
+            ps.AddCommand("Out-String");
 
-            // convert the script result into a single string
-            var stringBuilder = new StringBuilder();
-            foreach (var obj in results)
+            // Execute the script
+            Collection<PSObject> results = ps.Invoke();
+
+            // Check for errors in the error stream
+            if (ps.Streams.Error.Count > 0)
+            {
+                StringBuilder errorBuilder = new StringBuilder();
+                errorBuilder.AppendLine("PowerShell script execution failed with the following errors:");
+                foreach (ErrorRecord error in ps.Streams.Error)
+                {
+                    errorBuilder.AppendLine(error.ToString());
+                }
+                throw new System.InvalidOperationException(errorBuilder.ToString());
+            }
+
+            // Convert the script result into a single string
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach (PSObject obj in results)
             {
                 stringBuilder.AppendLine(obj.ToString());
             }
