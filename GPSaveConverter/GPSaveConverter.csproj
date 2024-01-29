@@ -5,8 +5,6 @@
         <OutputType>WinExe</OutputType>
         <UseWindowsForms>true</UseWindowsForms>
         <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-        <SignAssembly>true</SignAssembly>
-        <AssemblyOriginatorKeyFile>GPSaveConverterUnprotected.snk</AssemblyOriginatorKeyFile>
         <ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
         <Title>Xbox Save File Converter</Title>
         <Description>Utility to transfer save files between the games installed from the Xbox app and other storefronts.</Description>
@@ -17,6 +15,12 @@
         <FileVersion>0.4.10.0</FileVersion>
         <PackageIcon>Icon-256.png</PackageIcon>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+
+    <!-- Enable signing only when building for Release -->
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>GPSaveConverterUnprotected.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>
