@@ -7,8 +7,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>GPSaveConverterUnprotected.snk</AssemblyOriginatorKeyFile>
     <ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
     <Title>Xbox Save File Converter</Title>
     <Description>Utility to transfer save files between the games installed from the Xbox app and other storefronts.</Description>
@@ -41,7 +39,6 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="GPSaveConverter.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\Icon-16.png" />
