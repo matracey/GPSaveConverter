@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -101,51 +101,57 @@ namespace GPSaveConverter
             return returnVal;
         }
 
-        internal async Task<NonXboxProfile[]> getProfileOptions(string baseLocation)
+        internal async Task<NonXboxProfile[]> getProfileOptions(string? baseLocation)
         {
-            int markerStart = baseLocation.IndexOf(ProfileMarkerPrefix());
-            string profilesDir = baseLocation.Substring(0,markerStart);
-            string profileDirMarker = baseLocation.Substring(markerStart, baseLocation.IndexOf('>',markerStart)-markerStart + 1);
-
             List<NonXboxProfile> returnVal = new List<NonXboxProfile>();
-
-            if (FileSystem.DirectoryExists(profilesDir))
+            if (baseLocation == null)
             {
-                foreach (string p in FileSystem.GetDirectories(profilesDir))
+                return returnVal.ToArray();
+            }
+            int markerStart = baseLocation.IndexOf(ProfileMarkerPrefix());
+            string profilesDir = baseLocation.Substring(0, markerStart);
+            string profileDirMarker = baseLocation.Substring(markerStart, baseLocation.IndexOf('>', markerStart) - markerStart + 1);
+
+            if (!FileSystem.DirectoryExists(profilesDir))
+            {
+                return returnVal.ToArray();
+            }
+
+            foreach (string p in FileSystem.GetDirectories(profilesDir))
+            {
+                string newUserID = p.Replace(profilesDir, "");
+
+                if (this.profileType == ProfileType.Xbox)
                 {
-                    string newUserID = p.Replace(profilesDir, "");
-
-                    if(this.profileType == ProfileType.Xbox)
+                    if (profileDirMarker.EndsWith("_XboxInt>"))
                     {
-                        if (profileDirMarker.EndsWith("_XboxInt>"))
-                        {
-                            newUserID = Convert.ToString(long.Parse(newUserID),16).ToUpper();
-                        }
-                    }
-
-                    string expandedPath = this.ExpandSaveLocation(baseLocation, newUserID);
-
-                    if(expandedPath.Contains(ProfileMarkerPrefix(ProfileIndex + 1)))
-                    {
-                        expandedPath = expandedPath.Substring(0,expandedPath.IndexOf(ProfileMarkerPrefix(ProfileIndex + 1)));
-                    }
-
-                    if (FileSystem.DirectoryExists(expandedPath))
-                    {
-                        
-                        NonXboxProfile newProfile = new NonXboxProfile(newUserID, this.ProfileIndex,this.profileType);
-
-                        if (this.profileType == ProfileType.Steam)
-                        {
-                            if (profileDirMarker.EndsWith("_SteamID64>"))
-                            {
-                                newProfile.IDType = UserIDType.steamID64;
-                            }
-                        }
-                        await newProfile.FetchProfileInformation();
-                        returnVal.Add(newProfile);
+                        newUserID = Convert.ToString(long.Parse(newUserID), 16).ToUpper();
                     }
                 }
+
+                string expandedPath = this.ExpandSaveLocation(baseLocation, newUserID);
+
+                if (expandedPath.Contains(ProfileMarkerPrefix(ProfileIndex + 1)))
+                {
+                    expandedPath = expandedPath.Substring(0, expandedPath.IndexOf(ProfileMarkerPrefix(ProfileIndex + 1)));
+                }
+
+                if (!FileSystem.DirectoryExists(expandedPath))
+                {
+                    continue;
+                }
+
+                NonXboxProfile newProfile = new NonXboxProfile(newUserID, this.ProfileIndex, this.profileType);
+
+                if (this.profileType == ProfileType.Steam)
+                {
+                    if (profileDirMarker.EndsWith("_SteamID64>"))
+                    {
+                        newProfile.IDType = UserIDType.steamID64;
+                    }
+                }
+                await newProfile.FetchProfileInformation();
+                returnVal.Add(newProfile);
             }
 
             return returnVal.ToArray();
