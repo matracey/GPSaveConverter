@@ -28,8 +28,6 @@
     <PackageReference Include="NLog" Version="5.5.0" />
     <PackageReference Include="NLog.Windows.Forms" Version="5.2.4" />
     <PackageReference Include="Ookii.Dialogs.WinForms" Version="4.0.0" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.5" />
-    <PackageReference Include="System.Management" Version="10.0.5" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="CueTextBox.cs">
