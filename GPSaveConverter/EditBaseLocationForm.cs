@@ -12,6 +12,7 @@ namespace GPSaveConverter
 {
     public partial class EditBaseLocationForm : Form
     {
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string BaseLocation
         {
             get { return this.textBox1.Text; }

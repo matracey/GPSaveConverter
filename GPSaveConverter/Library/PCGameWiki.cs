@@ -1,104 +1,126 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Text.Json.Nodes;
-using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using GPSaveConverter.Interfaces;
 
 namespace GPSaveConverter.Library
 {
-    internal static class PCGameWiki
+    internal class PCGameWiki
     {
-        private static NLog.Logger logger = LogHelper.getClassLogger();
-        public static readonly string[,] FolderNameSubstitutions = new string[,] { { "{{p|userprofile}}",   "%USERPROFILE%"     }
-                                                                                 , { "{{p|appdata}}",       "%APPDATA%"         }
-                                                                                 , { "{{p|localappdata}}",  "%LOCALAPPDATA%"    }
-                                                                                 , { "{{p|programdata}}",   "%PROGRAMDATA%"     }
-                                                                                 , { "{{p|uid}}",           "<user-id>"         }
-                                                                                 , { "{{p|steam}}",         "<Steam-folder>"    } };
-        public static async Task FetchSaveLocation(GameInfo i)
+        private static readonly NLog.Logger logger = LogHelper.getClassLogger();
+
+        public static readonly string[,] FolderNameSubstitutions = new string[,] { { "userprofile",   "%USERPROFILE%"     }
+                                                                                  , { "appdata",       "%APPDATA%"         }
+                                                                                  , { "localappdata",  "%LOCALAPPDATA%"    }
+                                                                                  , { "programdata",   "%PROGRAMDATA%"     }
+                                                                                  , { "uid",           "<user-id>"         }
+                                                                                  , { "steam",         "<Steam-folder>"    }
+                                                                                  , { "game",          "<game-folder>"     } };
+
+        private readonly IHttpClient httpClient;
+
+        internal PCGameWiki(IHttpClient httpClient)
         {
-            logger.Info("Fetching save data from pcgamingwiki.com");
-            string wikiTable = null;
-            using (WebClient wc = new WebClient())
+            this.httpClient = httpClient;
+        }
+
+        public async Task FetchSaveLocation(GameInfo gameInfo)
+        {
+            logger.Info("Fetching save data from pcgamingwiki.com for '{0}'", gameInfo.Name);
+
+            string? wikiTable;
+            try
             {
-                try
-                {
-                    string url = String.Format(@"https://www.pcgamingwiki.com/w/api.php?action=query&prop=revisions&titles={0}&formatversion=2&format=json", i.Name);
-                    string queryJson = await wc.DownloadStringTaskAsync(url);
-
-                    JsonNode queryRoot = JsonValue.Parse(queryJson);
-
-                    if (queryRoot == null)
-                    {
-                        return;
-                    }
-                    if (queryRoot["query"]["pages"][0]["missing"] != null && queryRoot["query"]["pages"][0]["missing"].AsValue().GetValue<bool>())
-                    {
-                        return;
-                    }
-                    int pageID = queryRoot["query"]["pages"][0]["pageid"].AsValue().GetValue<int>();
-
-
-                    url = String.Format(@"https://www.pcgamingwiki.com/w/api.php?action=parse&pageid={0}&formatversion=2&format=json&prop=sections", pageID);
-                    string sectionsJson = await wc.DownloadStringTaskAsync(url);
-                    JsonNode sectionsRoot = JsonValue.Parse(sectionsJson);
-
-                    if (sectionsRoot == null)
-                    {
-                        return;
-                    }
-                    string sectionIndex = "-1";
-                    foreach (JsonNode n in sectionsRoot["parse"]["sections"].AsArray())
-                    {
-                        if (n["line"].GetValue<string>() == "Save game data location")
-                        {
-                            sectionIndex = n["index"].GetValue<string>();
-                        }
-                    }
-                    if (sectionIndex == null || sectionIndex == "-1")
-                    {
-                        return;
-                    }
-
-                    url = String.Format(@"https://www.pcgamingwiki.com/w/api.php?action=parse&pageid={0}&formatversion=2&format=json&prop=wikitext&section={1}", pageID, sectionIndex);
-                    string saveFileSectionJson = await wc.DownloadStringTaskAsync(url);
-                    JsonNode saveFileSectionRoot = JsonValue.Parse(saveFileSectionJson);
-                    wikiTable = saveFileSectionRoot["parse"]["wikitext"].GetValue<string>();
-
-                }
-                catch (Exception e)
-                {
-                    logger.Info(e, "Unable to fetch save data location");
-                }
+                wikiTable = await FetchSaveGameSectionWikiText(gameInfo.Name);
+            }
+            catch (Exception e)
+            {
+                logger.Warn(e, "Unable to fetch save data location for '{0}'", gameInfo.Name);
+                return;
             }
 
-            if (wikiTable != null)
+            if (wikiTable == null)
             {
-                string foundLocation;
-                Dictionary<string, string> saveLocationTable = parseWikiTable(wikiTable);
-                if (saveLocationTable.TryGetValue("Windows", out foundLocation) && foundLocation != String.Empty)
-                {
-                    i.BaseNonXboxSaveLocation = foundLocation;
-                    logger.Info("Save Data location loaded");
-                }
-                else
-                {
-                    if (saveLocationTable.TryGetValue("Steam", out foundLocation))
-                    {
-                        i.BaseNonXboxSaveLocation = foundLocation;
-                        i.TargetProfileTypes = new NonXboxProfile.ProfileType[] { NonXboxProfile.ProfileType.Steam };
-                        i.TargetProfiles = new NonXboxProfile[] { new NonXboxProfile(0, NonXboxProfile.ProfileType.Steam) };
-                        logger.Info("Save Data location loaded");
-                    }
-                }
+                return;
+            }
+
+            Dictionary<string, string> saveLocationTable = ParseWikiTable(wikiTable);
+
+            if (saveLocationTable.TryGetValue("Windows", out string? foundLocation) && !string.IsNullOrEmpty(foundLocation))
+            {
+                gameInfo.BaseNonXboxSaveLocation = foundLocation;
+                logger.Info("Save data location loaded for '{0}'", gameInfo.Name);
+            }
+            else if (saveLocationTable.TryGetValue("Steam", out foundLocation) && !string.IsNullOrEmpty(foundLocation))
+            {
+                gameInfo.BaseNonXboxSaveLocation = foundLocation;
+                gameInfo.TargetProfileTypes = new NonXboxProfile.ProfileType[] { NonXboxProfile.ProfileType.Steam };
+                gameInfo.TargetProfiles = new NonXboxProfile[] { new NonXboxProfile(0, NonXboxProfile.ProfileType.Steam) };
+                logger.Info("Save data location loaded (Steam) for '{0}'", gameInfo.Name);
             }
         }
 
+        private async Task<string?> FetchSaveGameSectionWikiText(string gameName)
+        {
+            string encodedName = Uri.EscapeDataString(gameName);
+            string cargoUrl = $"https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game&fields=Infobox_game._pageID=PageID&where=Infobox_game._pageName=%22{encodedName}%22&format=json";
+            string cargoJson = await httpClient.DownloadStringAsync(cargoUrl);
 
-        private static Dictionary<string, string> parseWikiTable(string unparsedWikiTable)
+            JsonNode? cargoRoot = JsonNode.Parse(cargoJson);
+            JsonArray? results = cargoRoot?["cargoquery"]?.AsArray();
+
+            if (results == null || results.Count == 0)
+            {
+                logger.Info("Game '{0}' not found on PCGamingWiki", gameName);
+                return null;
+            }
+
+            string? pageID = results[0]?["title"]?["PageID"]?.GetValue<string>();
+            if (string.IsNullOrEmpty(pageID))
+            {
+                logger.Warn("Page ID missing in Cargo response for '{0}'", gameName);
+                return null;
+            }
+
+            string sectionsUrl = $"https://www.pcgamingwiki.com/w/api.php?action=parse&pageid={pageID}&formatversion=2&format=json&prop=sections";
+            string sectionsJson = await httpClient.DownloadStringAsync(sectionsUrl);
+            JsonNode? sectionsRoot = JsonNode.Parse(sectionsJson);
+            JsonArray? sections = sectionsRoot?["parse"]?["sections"]?.AsArray();
+
+            if (sections == null)
+            {
+                logger.Warn("Failed to parse sections for page {0}", pageID);
+                return null;
+            }
+
+            string? sectionIndex = null;
+            foreach (JsonNode? n in sections)
+            {
+                if (n?["line"]?.GetValue<string>() == "Save game data location")
+                {
+                    sectionIndex = n["index"]?.GetValue<string>();
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(sectionIndex))
+            {
+                logger.Info("No 'Save game data location' section found for '{0}'", gameName);
+                return null;
+            }
+
+            string wikiTextUrl = $"https://www.pcgamingwiki.com/w/api.php?action=parse&pageid={pageID}&formatversion=2&format=json&prop=wikitext&section={sectionIndex}";
+            string saveFileSectionJson = await httpClient.DownloadStringAsync(wikiTextUrl);
+            JsonNode? saveFileSectionRoot = JsonNode.Parse(saveFileSectionJson);
+
+            return saveFileSectionRoot?["parse"]?["wikitext"]?.GetValue<string>();
+        }
+
+        internal static Dictionary<string, string> ParseWikiTable(string unparsedWikiTable)
         {
             int entryStart = unparsedWikiTable.IndexOf("{{Game data/saves|");
             int entryEnd = entryStart;
@@ -116,9 +138,12 @@ namespace GPSaveConverter.Library
 
                 string entryLine = unparsedWikiTable.Substring(entryStart, entryEnd - entryStart);
                 entryLine = NameSubstitution(entryLine);
-                string[] lineInfo = entryLine.Split('|');
+                string[] lineInfo = SplitTopLevelPipes(entryLine);
 
-                result.Add(lineInfo[1], lineInfo[2]);
+                if (lineInfo.Length >= 3)
+                {
+                    result.Add(lineInfo[1], lineInfo[2]);
+                }
 
                 entryStart = unparsedWikiTable.IndexOf("{{Game data/saves|", entryEnd);
             }
@@ -126,13 +151,49 @@ namespace GPSaveConverter.Library
             return result;
         }
 
-        private static string NameSubstitution(string path)
+        /// <summary>
+        /// Split on '|' characters that are not inside nested {{ }} templates.
+        /// </summary>
+        internal static string[] SplitTopLevelPipes(string entry)
+        {
+            var parts = new List<string>();
+            int depth = 0;
+            int segmentStart = 0;
+
+            for (int i = 0; i < entry.Length; i++)
+            {
+                if (i < entry.Length - 1 && entry[i] == '{' && entry[i + 1] == '{')
+                {
+                    depth++;
+                    i++; // skip second '{'
+                }
+                else if (i < entry.Length - 1 && entry[i] == '}' && entry[i + 1] == '}')
+                {
+                    depth--;
+                    i++; // skip second '}'
+                }
+                else if (entry[i] == '|' && depth <= 1)
+                {
+                    // depth 1 = inside the outer {{Game data/saves|...}} — these are the real delimiters
+                    // depth 2+ = inside nested {{p|...}} — skip these
+                    parts.Add(entry.Substring(segmentStart, i - segmentStart));
+                    segmentStart = i + 1;
+                }
+            }
+
+            parts.Add(entry.Substring(segmentStart));
+            return parts.ToArray();
+        }
+
+        internal static string NameSubstitution(string path)
         {
             for (int i = 0; i < FolderNameSubstitutions.GetLength(0); i++)
             {
-                path = Regex.Replace(path, Regex.Escape(FolderNameSubstitutions[i, 0]), FolderNameSubstitutions[i, 1].Replace("$", "$$"),RegexOptions.IgnoreCase);
-
-                //path.Replace(FolderNameSubstitutions[i,0], FolderNameSubstitutions[i,1]);
+                string folderName = FolderNameSubstitutions[i, 0];
+                string replacement = FolderNameSubstitutions[i, 1];
+                // Match {{p|folderName}} or {{p|folderName\subpath}}
+                string pattern = @"\{\{p\|" + Regex.Escape(folderName) + @"(\\[^}]*)?\}\}";
+                path = Regex.Replace(path, pattern, replacement.Replace("$", "$$") + "$1", RegexOptions.IgnoreCase);
             }
             return path;
         }

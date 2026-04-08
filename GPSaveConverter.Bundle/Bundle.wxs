@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+    <Bundle
+        Id="Fr33dan.GPSaveConverter.Bundle"
+        Name="$(ProductName)"
+        Manufacturer="$(ProductManufacturer)"
+        Version="$(ProductVersion)"
+        UpgradeCode="F5E2D3C4-B1A0-4F8E-9D7C-6B5A4E3F2D1C">
+
+        <BootstrapperApplication>
+            <bal:WixStandardBootstrapperApplication
+                Theme="hyperlinkLicense"
+                LicenseUrl=""
+                LogoFile="$(GPSaveConverter.ProjectDir)Resources\Icon.ico" />
+        </BootstrapperApplication>
+
+        <Chain>
+            <MsiPackage SourceFile="$(GPSaveConverter.Installer.TargetPath)" />
+        </Chain>
+    </Bundle>
+</Wix>
