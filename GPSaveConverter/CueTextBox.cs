@@ -10,6 +10,7 @@ namespace GPSaveConverter
     public partial class CueTextBox : TextBox
     {
         [Localizable(true)]
+        [DefaultValue("")]
         public string Cue
         {
             get { return mCue; }
