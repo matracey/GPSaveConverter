@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
     <Package
         Id="Fr33dan.GPSaveConverter"
         Name="$(ProductName)"
@@ -26,5 +27,8 @@
             <ComponentRef Id="DesktopShortcut" />
             <ComponentRef Id="CleanupComponent" />
         </Feature>
+
+        <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+        <WixVariable Id="WixUILicenseRtf" Value="..\LICENSE.rtf" />
     </Package>
 </Wix>
