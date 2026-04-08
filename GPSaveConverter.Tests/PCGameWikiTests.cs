@@ -53,7 +53,7 @@ namespace GPSaveConverter.Tests
         {
             string wikiText = "{{Game data/saves|%APPDATA%|\\SomeGame\\save.dat}}";
 
-            Dictionary<string, string> result = PCGameWiki.parseWikiTable(wikiText);
+            Dictionary<string, string> result = PCGameWiki.ParseWikiTable(wikiText);
 
             Assert.Single(result);
             Assert.Equal("\\SomeGame\\save.dat", result["%APPDATA%"]);
@@ -67,7 +67,7 @@ namespace GPSaveConverter.Tests
                 "Some text between" +
                 "{{Game data/saves|%LOCALAPPDATA%|\\Game2\\config.ini}}";
 
-            Dictionary<string, string> result = PCGameWiki.parseWikiTable(wikiText);
+            Dictionary<string, string> result = PCGameWiki.ParseWikiTable(wikiText);
 
             Assert.Equal(2, result.Count);
             Assert.Equal("\\Game1\\save.dat", result["%APPDATA%"]);
@@ -79,7 +79,7 @@ namespace GPSaveConverter.Tests
         {
             string wikiText = "This is a wiki page with no save data entries.";
 
-            Dictionary<string, string> result = PCGameWiki.parseWikiTable(wikiText);
+            Dictionary<string, string> result = PCGameWiki.ParseWikiTable(wikiText);
 
             Assert.Empty(result);
         }
@@ -90,7 +90,7 @@ namespace GPSaveConverter.Tests
             // Nested {{}} inside the entry — parser must find the matching closing braces
             string wikiText = "{{Game data/saves|{{p|appdata}}|\\SomeGame\\save.dat}}";
 
-            Dictionary<string, string> result = PCGameWiki.parseWikiTable(wikiText);
+            Dictionary<string, string> result = PCGameWiki.ParseWikiTable(wikiText);
 
             Assert.Single(result);
             Assert.Equal("\\SomeGame\\save.dat", result["%APPDATA%"]);
