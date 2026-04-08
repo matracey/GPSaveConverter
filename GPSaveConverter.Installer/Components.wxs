@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <ComponentGroup Id="PublishComponents" Directory="INSTALLFOLDER">
+            <Files Include="$(GPSaveConverter.TargetDir)**" />
+        </ComponentGroup>
+
+        <Component Id="CleanupComponent" Directory="INSTALLFOLDER">
+            <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+            <RegistryValue
+                Root="HKCU"
+                Key="Software\GPSaveConverter"
+                Name="Cleanup"
+                Type="integer"
+                Value="1"
+                KeyPath="yes" />
+        </Component>
+    </Fragment>
+
+    <Fragment>
+        <StandardDirectory Id="ProgramMenuFolder">
+            <Directory Id="ApplicationProgramsFolder" Name="GP Save Converter" />
+        </StandardDirectory>
+
+        <Component Id="StartMenuShortcut" Directory="ApplicationProgramsFolder">
+            <Shortcut
+                Id="StartMenuShortcut"
+                Name="GP Save Converter"
+                Description="Transfer save files between Xbox and other storefronts"
+                Target="[INSTALLFOLDER]GPSaveConverter.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon" />
+
+            <RemoveFolder Id="CleanUpProgramMenuFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
+            <RegistryValue
+                Root="HKCU"
+                Key="Software\GPSaveConverter"
+                Name="StartMenuShortcutInstalled"
+                Type="integer"
+                Value="1"
+                KeyPath="yes" />
+        </Component>
+    </Fragment>
+
+    <Fragment>
+        <StandardDirectory Id="DesktopFolder" />
+
+        <Component Id="DesktopShortcut" Directory="DesktopFolder">
+            <Shortcut
+                Id="DesktopShortcut"
+                Name="GP Save Converter"
+                Description="Transfer save files between Xbox and other storefronts"
+                Target="[INSTALLFOLDER]GPSaveConverter.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon" />
+
+            <RegistryValue
+                Root="HKCU"
+                Key="Software\GPSaveConverter"
+                Name="DesktopShortcutInstalled"
+                Type="integer"
+                Value="1"
+                KeyPath="yes" />
+        </Component>
+    </Fragment>
+</Wix>
