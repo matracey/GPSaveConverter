@@ -89,7 +89,7 @@ namespace GPSaveConverter.Tests
             }
         }
 
-        [Fact(Skip = "Pre-existing parser bug: {{p|userprofile\\Documents}} contains a pipe that Split('|') breaks on. Fix ParseWikiTable to handle nested templates before splitting.")]
+        [Fact]
         [Trait("Category", "Smoke")]
         public async Task FetchSaveLocation_Hades_ReturnsSubstitutedPath()
         {
