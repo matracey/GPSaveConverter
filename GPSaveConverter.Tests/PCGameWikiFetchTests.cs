@@ -22,9 +22,9 @@ namespace GPSaveConverter.Tests
         {
             var gameInfo = new GameInfo { Name = "Hades" };
 
-            // Step 1: Query API returns page ID
-            _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=query")))
-                .Returns(Task.FromResult("{\"query\":{\"pages\":[{\"pageid\":12345}]}}"));
+            // Step 1: Cargo query returns page ID
+            _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=cargoquery")))
+                .Returns(Task.FromResult("{\"cargoquery\":[{\"title\":{\"PageID\":\"12345\"}}]}"));
 
             // Step 2: sections returns "Save game data location" section
             _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=parse") && u.Contains("prop=sections")))
@@ -44,9 +44,9 @@ namespace GPSaveConverter.Tests
         {
             var gameInfo = new GameInfo { Name = "NonExistentGame" };
 
-            // Query API returns missing page
+            // Cargo query returns empty results
             _httpClient.DownloadStringAsync(Arg.Any<string>())
-                .Returns(Task.FromResult("{\"query\":{\"pages\":[{\"missing\":true}]}}"));
+                .Returns(Task.FromResult("{\"cargoquery\":[]}"));
 
             await _wiki.FetchSaveLocation(gameInfo);
 
@@ -58,8 +58,8 @@ namespace GPSaveConverter.Tests
         {
             var gameInfo = new GameInfo { Name = "Hades" };
 
-            _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=query")))
-                .Returns(Task.FromResult("{\"query\":{\"pages\":[{\"pageid\":12345}]}}"));
+            _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=cargoquery")))
+                .Returns(Task.FromResult("{\"cargoquery\":[{\"title\":{\"PageID\":\"12345\"}}]}"));
 
             _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=parse")))
                 .Returns(Task.FromResult("{\"parse\":{\"sections\":[{\"line\":\"Gameplay\",\"index\":\"1\"}]}}"));
@@ -74,8 +74,8 @@ namespace GPSaveConverter.Tests
         {
             var gameInfo = new GameInfo { Name = "SteamGame" };
 
-            _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=query")))
-                .Returns(Task.FromResult("{\"query\":{\"pages\":[{\"pageid\":99}]}}"));
+            _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=cargoquery")))
+                .Returns(Task.FromResult("{\"cargoquery\":[{\"title\":{\"PageID\":\"99\"}}]}"));
 
             _httpClient.DownloadStringAsync(Arg.Is<string>(u => u.Contains("action=parse") && u.Contains("prop=sections")))
                 .Returns(Task.FromResult("{\"parse\":{\"sections\":[{\"line\":\"Save game data location\",\"index\":\"2\"}]}}"));

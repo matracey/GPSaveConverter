@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using GPSaveConverter.Interfaces;
 
 namespace GPSaveConverter.Library
@@ -32,25 +32,28 @@ namespace GPSaveConverter.Library
             string wikiTable = null;
             try
             {
-                string url = String.Format(@"https://www.pcgamingwiki.com/w/api.php?action=query&prop=revisions&titles={0}&formatversion=2&format=json", i.Name);
-                string queryJson = await httpClient.DownloadStringAsync(url);
+                string encodedName = Uri.EscapeDataString(i.Name);
+                string cargoUrl = $"https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game&fields=Infobox_game._pageID=PageID&where=Infobox_game._pageName=%22{encodedName}%22&format=json";
+                string cargoJson = await httpClient.DownloadStringAsync(cargoUrl);
 
-                JsonNode queryRoot = JsonValue.Parse(queryJson);
+                JsonNode cargoRoot = JsonNode.Parse(cargoJson);
+                JsonArray results = cargoRoot?["cargoquery"]?.AsArray();
 
-                if (queryRoot == null)
+                if (results == null || results.Count == 0)
+                {
+                    logger.Info("Game '{0}' not found on PCGamingWiki", i.Name);
+                    return;
+                }
+
+                string pageID = results[0]?["title"]?["PageID"]?.GetValue<string>();
+                if (string.IsNullOrEmpty(pageID))
                 {
                     return;
                 }
-                if (queryRoot["query"]["pages"][0]["missing"] != null && queryRoot["query"]["pages"][0]["missing"].AsValue().GetValue<bool>())
-                {
-                    return;
-                }
-                int pageID = queryRoot["query"]["pages"][0]["pageid"].AsValue().GetValue<int>();
 
-
-                url = String.Format(@"https://www.pcgamingwiki.com/w/api.php?action=parse&pageid={0}&formatversion=2&format=json&prop=sections", pageID);
-                string sectionsJson = await httpClient.DownloadStringAsync(url);
-                JsonNode sectionsRoot = JsonValue.Parse(sectionsJson);
+                string sectionsUrl = $"https://www.pcgamingwiki.com/w/api.php?action=parse&pageid={pageID}&formatversion=2&format=json&prop=sections";
+                string sectionsJson = await httpClient.DownloadStringAsync(sectionsUrl);
+                JsonNode sectionsRoot = JsonNode.Parse(sectionsJson);
 
                 if (sectionsRoot == null)
                 {
@@ -69,9 +72,9 @@ namespace GPSaveConverter.Library
                     return;
                 }
 
-                url = String.Format(@"https://www.pcgamingwiki.com/w/api.php?action=parse&pageid={0}&formatversion=2&format=json&prop=wikitext&section={1}", pageID, sectionIndex);
-                string saveFileSectionJson = await httpClient.DownloadStringAsync(url);
-                JsonNode saveFileSectionRoot = JsonValue.Parse(saveFileSectionJson);
+                string wikiTextUrl = $"https://www.pcgamingwiki.com/w/api.php?action=parse&pageid={pageID}&formatversion=2&format=json&prop=wikitext&section={sectionIndex}";
+                string saveFileSectionJson = await httpClient.DownloadStringAsync(wikiTextUrl);
+                JsonNode saveFileSectionRoot = JsonNode.Parse(saveFileSectionJson);
                 wikiTable = saveFileSectionRoot["parse"]["wikitext"].GetValue<string>();
 
             }
