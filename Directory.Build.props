@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <Version>0.4.10</Version>
+    <FileVersion>$(Version).0</FileVersion>
+    <AssemblyVersion>$(Version).0</AssemblyVersion>
+    <Product>GP Save Converter</Product>
+    <Company>Fr33dan</Company>
+    <Copyright>Copyright © 2024 $(Company)</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.wixproj'">
+    <DefineConstants>$(DefineConstants);ProductVersion=$(Version);ProductName=$(Product);ProductManufacturer=$(Company)</DefineConstants>
+  </PropertyGroup>
+</Project>
