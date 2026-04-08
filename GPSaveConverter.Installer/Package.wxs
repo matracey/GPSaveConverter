@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Package
+        Id="Fr33dan.GPSaveConverter"
+        Name="$(ProductName)"
+        Manufacturer="$(ProductManufacturer)"
+        Version="$(ProductVersion)"
+        Scope="perUser"
+        InstallerVersion="500">
+
+        <Icon Id="AppIcon" SourceFile="$(GPSaveConverter.ProjectDir)Resources\Icon.ico" />
+        <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+        <MajorUpgrade
+            DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+        <MediaTemplate EmbedCab="yes" />
+
+        <StandardDirectory Id="PerUserProgramFilesFolder">
+            <Directory Id="INSTALLFOLDER" Name="GP Save Converter" />
+        </StandardDirectory>
+
+        <Feature Id="Main" Level="1">
+            <ComponentGroupRef Id="PublishComponents" />
+            <ComponentRef Id="StartMenuShortcut" />
+            <ComponentRef Id="DesktopShortcut" />
+            <ComponentRef Id="CleanupComponent" />
+        </Feature>
+    </Package>
+</Wix>

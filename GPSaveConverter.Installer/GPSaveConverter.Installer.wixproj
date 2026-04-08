@@ -1,0 +1,13 @@
+<Project Sdk="WixToolset.Sdk/6.0.2">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Platforms>x64;Any CPU</Platforms>
+    <!-- Suppress ICE38/ICE64/ICE91 for per-user install -->
+    <SuppressIces>ICE38;ICE64;ICE91</SuppressIces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GPSaveConverter\GPSaveConverter.csproj" />
+  </ItemGroup>
+</Project>
