@@ -486,7 +486,6 @@ $RECYCLE.BIN/
 ###
 
 [Cc]erts/
-SteamAPIKey.txt
 
 # VSCode C# Dev Kit
 *.lscache

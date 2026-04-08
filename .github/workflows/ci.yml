@@ -25,14 +25,13 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Create Steam API key placeholder
-        run: New-Item -Path GPSaveConverter/Resources/steamapikey.txt -ItemType File -Force
-
       - name: Restore and Build
         run: dotnet build GPSaveConverter.sln --configuration ${{ matrix.configuration }} --verbosity minimal
 
       - name: Run tests
         run: dotnet test GPSaveConverter.Tests/GPSaveConverter.Tests.csproj --configuration ${{ matrix.configuration }} --no-build --verbosity normal --filter "Category!=Smoke" --logger "trx;LogFileName=test-results.trx"
+        env:
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
 
       - name: Upload test results
         if: always()

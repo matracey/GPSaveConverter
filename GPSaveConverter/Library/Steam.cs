@@ -12,6 +12,8 @@ namespace GPSaveConverter.Library
     {
         private const ulong SteamID64IndividualProfile = 0x0110000100000000;
 
+        private static readonly string? ApiKey = Environment.GetEnvironmentVariable("STEAM_API_KEY");
+
         private readonly IHttpClient httpClient;
 
         internal Steam(IHttpClient httpClient)
@@ -19,13 +21,17 @@ namespace GPSaveConverter.Library
             this.httpClient = httpClient;
         }
 
+        internal static bool IsAvailable => !string.IsNullOrEmpty(ApiKey);
+
         internal async Task GetUserInformation(NonXboxProfile profile)
         {
+            if (!IsAvailable) return;
+
             try
             {
                 ulong steamID64 = profile.IDType == NonXboxProfile.UserIDType.steamID3 ? GetSteamID64(profile.UserID) : ulong.Parse(profile.UserID);
                 string url = String.Format(@"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={0}&steamids={1}"
-                                            , GPSaveConverter.Properties.Resources.SteamAPIKey
+                                            , ApiKey
                                             , steamID64);
                 string queryJson = await httpClient.DownloadStringAsync(url);
                 JsonNode queryRoot = JsonValue.Parse(queryJson);
@@ -36,17 +42,17 @@ namespace GPSaveConverter.Library
             catch (Exception e) { }
         }
 
-        internal async Task<System.Drawing.Bitmap> LoadIcon(NonXboxProfile profile)
+        internal async Task<System.Drawing.Bitmap?> LoadIcon(NonXboxProfile profile)
         {
-            System.Drawing.Bitmap returnVal = null;
+            if (string.IsNullOrEmpty(profile.UserIconLocation)) return null;
+
             try
             {
                 byte[] imageData = await httpClient.DownloadDataAsync(profile.UserIconLocation);
-
-                returnVal = new System.Drawing.Bitmap(new System.IO.MemoryStream(imageData));
+                return new System.Drawing.Bitmap(new System.IO.MemoryStream(imageData));
             }
             catch (Exception e) { }
-            return returnVal;
+            return null;
         }
 
         /// <summary>
