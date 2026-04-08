@@ -13,12 +13,13 @@ namespace GPSaveConverter.Library
     {
         private static readonly NLog.Logger logger = LogHelper.getClassLogger();
 
-        public static readonly string[,] FolderNameSubstitutions = new string[,] { { "{{p|userprofile}}",   "%USERPROFILE%"     }
-                                                                                  , { "{{p|appdata}}",       "%APPDATA%"         }
-                                                                                  , { "{{p|localappdata}}",  "%LOCALAPPDATA%"    }
-                                                                                  , { "{{p|programdata}}",   "%PROGRAMDATA%"     }
-                                                                                  , { "{{p|uid}}",           "<user-id>"         }
-                                                                                  , { "{{p|steam}}",         "<Steam-folder>"    } };
+        public static readonly string[,] FolderNameSubstitutions = new string[,] { { "userprofile",   "%USERPROFILE%"     }
+                                                                                  , { "appdata",       "%APPDATA%"         }
+                                                                                  , { "localappdata",  "%LOCALAPPDATA%"    }
+                                                                                  , { "programdata",   "%PROGRAMDATA%"     }
+                                                                                  , { "uid",           "<user-id>"         }
+                                                                                  , { "steam",         "<Steam-folder>"    }
+                                                                                  , { "game",          "<game-folder>"     } };
 
         private readonly IHttpClient httpClient;
 
@@ -137,9 +138,12 @@ namespace GPSaveConverter.Library
 
                 string entryLine = unparsedWikiTable.Substring(entryStart, entryEnd - entryStart);
                 entryLine = NameSubstitution(entryLine);
-                string[] lineInfo = entryLine.Split('|');
+                string[] lineInfo = SplitTopLevelPipes(entryLine);
 
-                result.Add(lineInfo[1], lineInfo[2]);
+                if (lineInfo.Length >= 3)
+                {
+                    result.Add(lineInfo[1], lineInfo[2]);
+                }
 
                 entryStart = unparsedWikiTable.IndexOf("{{Game data/saves|", entryEnd);
             }
@@ -147,11 +151,49 @@ namespace GPSaveConverter.Library
             return result;
         }
 
+        /// <summary>
+        /// Split on '|' characters that are not inside nested {{ }} templates.
+        /// </summary>
+        internal static string[] SplitTopLevelPipes(string entry)
+        {
+            var parts = new List<string>();
+            int depth = 0;
+            int segmentStart = 0;
+
+            for (int i = 0; i < entry.Length; i++)
+            {
+                if (i < entry.Length - 1 && entry[i] == '{' && entry[i + 1] == '{')
+                {
+                    depth++;
+                    i++; // skip second '{'
+                }
+                else if (i < entry.Length - 1 && entry[i] == '}' && entry[i + 1] == '}')
+                {
+                    depth--;
+                    i++; // skip second '}'
+                }
+                else if (entry[i] == '|' && depth <= 1)
+                {
+                    // depth 1 = inside the outer {{Game data/saves|...}} — these are the real delimiters
+                    // depth 2+ = inside nested {{p|...}} — skip these
+                    parts.Add(entry.Substring(segmentStart, i - segmentStart));
+                    segmentStart = i + 1;
+                }
+            }
+
+            parts.Add(entry.Substring(segmentStart));
+            return parts.ToArray();
+        }
+
         internal static string NameSubstitution(string path)
         {
             for (int i = 0; i < FolderNameSubstitutions.GetLength(0); i++)
             {
-                path = Regex.Replace(path, Regex.Escape(FolderNameSubstitutions[i, 0]), FolderNameSubstitutions[i, 1].Replace("$", "$$"), RegexOptions.IgnoreCase);
+                string folderName = FolderNameSubstitutions[i, 0];
+                string replacement = FolderNameSubstitutions[i, 1];
+                // Match {{p|folderName}} or {{p|folderName\subpath}}
+                string pattern = @"\{\{p\|" + Regex.Escape(folderName) + @"(\\[^}]*)?\}\}";
+                path = Regex.Replace(path, pattern, replacement.Replace("$", "$$") + "$1", RegexOptions.IgnoreCase);
             }
             return path;
         }
